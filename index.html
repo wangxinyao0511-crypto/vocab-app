@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Vocab"/>
+<meta name="theme-color" content="#0f0f0f"/>
+<link rel="manifest" href="manifest.json"/>
+<link rel="apple-touch-icon" href="icon.svg"/>
+<title>My Vocab Notebook</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0f0f0f;
+  --surface:#1a1a1a;
+  --surface2:#242424;
+  --border:#2e2e2e;
+  --text:#f0ede8;
+  --muted:#888;
+  --accent:#c9a96e;
+  --accent-dim:#7a5f38;
+  --danger:#c94f4f;
+  --serif:'DM Serif Display',serif;
+  --sans:'DM Sans',sans-serif;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);font-weight:400;overflow:hidden}
+
+/* Layout */
+#app{display:flex;flex-direction:column;height:100vh;height:100dvh;max-width:480px;margin:0 auto}
+#topbar{padding:env(safe-area-inset-top,0) 20px 0;background:var(--bg)}
+#topbar-inner{display:flex;align-items:center;justify-content:space-between;padding:16px 0 12px}
+h1{font-family:var(--serif);font-size:26px;font-weight:400;letter-spacing:-0.3px}
+#word-count{font-size:12px;color:var(--muted);letter-spacing:0.5px;text-transform:uppercase}
+
+/* Search */
+#search-wrap{padding:0 20px 12px;background:var(--bg)}
+#search{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:11px 16px;font-family:var(--sans);font-size:15px;color:var(--text);outline:none;transition:border-color 0.2s}
+#search::placeholder{color:var(--muted)}
+#search:focus{border-color:var(--accent-dim)}
+
+/* Tabs */
+#tabs{display:flex;gap:4px;padding:0 20px 12px;background:var(--bg)}
+.tab{flex:1;padding:8px;border:1px solid var(--border);border-radius:10px;background:none;color:var(--muted);font-family:var(--sans);font-size:13px;cursor:pointer;transition:all 0.2s;text-align:center}
+.tab.active{background:var(--accent);border-color:var(--accent);color:#0f0f0f;font-weight:500}
+
+/* List */
+#list-wrap{flex:1;overflow-y:auto;padding:0 20px;-webkit-overflow-scrolling:touch}
+#list-wrap::-webkit-scrollbar{display:none}
+
+.word-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:10px;position:relative;transition:border-color 0.2s;animation:fadeIn 0.2s ease}
+.word-card:active{background:var(--surface2)}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+.card-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px}
+.word{font-family:var(--serif);font-size:20px;font-weight:400;color:var(--text);letter-spacing:-0.2px}
+.del-btn{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:0 0 0 8px;line-height:1;flex-shrink:0;transition:color 0.2s}
+.del-btn:active{color:var(--danger)}
+.meaning{font-size:13px;color:var(--accent);margin-bottom:8px;font-weight:500;letter-spacing:0.2px}
+.example{font-size:13px;color:var(--muted);line-height:1.6;font-style:italic;border-left:2px solid var(--border);padding-left:10px}
+.date-tag{font-size:11px;color:#555;margin-top:8px;letter-spacing:0.3px}
+
+.empty{text-align:center;padding:60px 20px;color:var(--muted)}
+.empty-icon{font-size:48px;margin-bottom:16px}
+.empty-text{font-size:15px;line-height:1.6}
+
+/* Add word panel */
+#add-panel{background:var(--bg);border-top:1px solid var(--border);padding:12px 20px env(safe-area-inset-bottom,12px)}
+#add-form{display:none;flex-direction:column;gap:8px;margin-bottom:12px}
+#add-form.open{display:flex}
+#add-form input,#add-form textarea{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:11px 14px;font-family:var(--sans);font-size:14px;color:var(--text);outline:none;transition:border-color 0.2s;resize:none}
+#add-form input::placeholder,#add-form textarea::placeholder{color:var(--muted)}
+#add-form input:focus,#add-form textarea:focus{border-color:var(--accent-dim)}
+#form-btns{display:flex;gap:8px}
+.btn-primary{flex:1;background:var(--accent);border:none;border-radius:10px;padding:12px;font-family:var(--sans);font-size:14px;font-weight:500;color:#0f0f0f;cursor:pointer;transition:opacity 0.2s}
+.btn-primary:active{opacity:0.8}
+.btn-secondary{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;font-family:var(--sans);font-size:14px;color:var(--muted);cursor:pointer}
+#fab{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;font-family:var(--sans);font-size:14px;color:var(--accent);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background 0.2s}
+#fab:active{background:var(--surface2)}
+.plus{font-size:20px;line-height:1}
+
+/* Stats bar */
+#stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px}
+.stat{background:var(--surface);border-radius:10px;padding:10px;text-align:center}
+.stat-num{font-family:var(--serif);font-size:22px;color:var(--accent)}
+.stat-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-top:2px}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="topbar">
+    <div id="topbar-inner">
+      <h1>My Vocab 📖</h1>
+      <span id="word-count">0 words</span>
+    </div>
+  </div>
+
+  <div id="search-wrap">
+    <input type="search" id="search" placeholder="Search words or meanings..." oninput="render()"/>
+  </div>
+
+  <div id="tabs">
+    <button class="tab active" onclick="setTab('all',this)">All</button>
+    <button class="tab" onclick="setTab('recent',this)">Recent</button>
+    <button class="tab" onclick="setTab('review',this)">To review</button>
+  </div>
+
+  <div id="list-wrap">
+    <div id="list"></div>
+  </div>
+
+  <div id="add-panel">
+    <div id="add-form">
+      <input type="text" id="f-word" placeholder="Word or phrase (e.g. humid)"/>
+      <input type="text" id="f-meaning" placeholder="Chinese meaning (e.g. 潮湿)"/>
+      <textarea id="f-example" rows="2" placeholder="Example sentence from our conversation"></textarea>
+      <div id="form-btns">
+        <button class="btn-primary" onclick="addWord()">Save word</button>
+        <button class="btn-secondary" onclick="toggleForm(false)">Cancel</button>
+      </div>
+    </div>
+    <button id="fab" onclick="toggleForm(true)">
+      <span class="plus">+</span> Add new word
+    </button>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'vocab-words-v4';
+let words = [];
+let currentTab = 'all';
+
+const DEFAULT = [
+  {id:1,word:'humid',meaning:'潮湿的',example:'The weather in Guangzhou is hot and humid.',date:'2026-06-05',review:false},
+  {id:2,word:'hire',meaning:'雇佣',example:'We hired a worker to fix our stove.',date:'2026-06-05',review:false},
+  {id:3,word:'stove',meaning:'炉灶',example:'Our kitchen stove had an ignition problem.',date:'2026-06-05',review:false},
+  {id:4,word:'catch a cold',meaning:'感冒',example:'Getting soaked in rain then sitting in AC is a recipe for catching a cold.',date:'2026-06-05',review:false},
+  {id:5,word:'severance pay',meaning:'遣散费',example:'My colleague received N+0.5 months of severance pay.',date:'2026-06-05',review:false},
+  {id:6,word:'recharge',meaning:'恢复精力',example:'I need a lazy Sunday with my cats to recharge.',date:'2026-06-05',review:false},
+  {id:7,word:'ride',meaning:'游乐设施',example:'Some rides at the water play area are scary but fun.',date:'2026-06-05',review:false},
+  {id:8,word:'scary vs scared',meaning:'令人害怕的 vs 感到害怕',example:'The ride is scary, but I am not scared.',date:'2026-06-05',review:false},
+  {id:9,word:'memorize',meaning:'记忆、背诵',example:'It is hard to memorize vocabulary without context.',date:'2026-06-05',review:false},
+  {id:10,word:'update my CV',meaning:'更新简历',example:'I plan to update my CV before looking for a new job.',date:'2026-06-05',review:false},
+  {id:11,word:'lifesaver',meaning:'救星、极有帮助的东西',example:'Air conditioning is a lifesaver in Guangzhou summers.',date:'2026-06-05',review:false},
+  {id:12,word:'by myself',meaning:'独自、自己',example:'I cooked by myself while the stove was being fixed.',date:'2026-06-05',review:false},
+  {id:13,word:'push the business forward',meaning:'推动业务发展',example:'It is hard to push the business forward when you disagree with your boss.',date:'2026-06-05',review:false},
+  {id:14,word:'tie me down',meaning:'束缚、限制自由',example:'My cats tie me down so I cannot travel for too long.',date:'2026-06-05',review:false},
+  {id:15,word:'musical piece',meaning:'（器乐）曲子',example:'Kiss the Rain is a beautiful piano piece by Yiruma.',date:'2026-06-05',review:false},
+  {id:16,word:'tiptoe around',meaning:'小心翼翼，不想打扰',example:'I have to tiptoe around my roommates because they are a couple.',date:'2026-06-05',review:false},
+  {id:17,word:'house hunting',meaning:'找房子',example:'I am going house hunting with my colleague this Saturday.',date:'2026-06-05',review:false},
+  {id:18,word:'squeeze in',meaning:'挤出时间做某事',example:'My Saturday is busy but I will squeeze in some cat time on Sunday.',date:'2026-06-05',review:false},
+  {id:19,word:'go off on their own',meaning:'独来独往、自己待着',example:'One of my cats follows me everywhere, the other goes off on their own.',date:'2026-06-05',review:false},
+  {id:20,word:'hands-on',meaning:'动手实践的',example:'I want a hands-on job that AI cannot replace.',date:'2026-06-05',review:false},
+  {id:21,word:'office worker',meaning:'办公室职员',example:'Office workers are more likely to lose their jobs because of AI.',date:'2026-06-05',review:false},
+  {id:22,word:'more likely to',meaning:'更可能…',example:'Hands-on jobs are more likely to survive the age of AI.',date:'2026-06-05',review:false},
+  {id:23,word:'hairdresser',meaning:'理发师',example:'A skilled hairdresser can earn a lot of money.',date:'2026-06-05',review:false},
+  {id:24,word:'bangs / fringe',meaning:'刘海',example:'I once tried cutting my own bangs — it did not turn out well!',date:'2026-06-05',review:false},
+  {id:25,word:'awkward',meaning:'尴尬的',example:'Living with a couple as your roommate feels very awkward.',date:'2026-06-05',review:false},
+  {id:26,word:'charm',meaning:'魅力',example:'Both my cats have their own charm.',date:'2026-06-05',review:false},
+  {id:27,word:'clingy',meaning:'粘人的',example:'My cat is very clingy — she follows me everywhere including the bathroom!',date:'2026-06-10',review:false},
+  {id:28,word:'tolerate',meaning:'容忍、将就',example:'My two cats tolerate each other but are not really friends.',date:'2026-06-10',review:false},
+  {id:29,word:'scout / scouting trip',meaning:'事先探查、打前站',example:'I went on a scouting trip to check the new neighbourhood before deciding to move.',date:'2026-06-10',review:false},
+  {id:30,word:'can you see yourself',meaning:'你能想象自己…吗？（表示适合度）',example:'Can you see yourself living there, elevator wait and all?',date:'2026-06-10',review:false},
+  {id:31,word:'gym session',meaning:'健身课',example:'I still have 7 gym sessions left before I can move.',date:'2026-06-10',review:false},
+  {id:32,word:'twice a week',meaning:'每周两次',example:'I go to the gym twice a week.',date:'2026-06-10',review:false},
+  {id:33,word:'it took me',meaning:'花了我（多少时间）',example:'It took me a week to get my two cats to accept each other.',date:'2026-06-10',review:false},
+  {id:34,word:'the other',meaning:'另一个（两者中）',example:'One of my cats is clingy, the other goes off on her own.',date:'2026-06-10',review:false},
+  {id:35,word:'validate my feelings',meaning:'认可我的感受',example:'I just need someone to validate my feelings.',date:'2026-06-11',review:false},
+  {id:36,word:'take my side',meaning:'站在我这边',example:'All my friends took my side when I told them about the situation.',date:'2026-06-11',review:false},
+  {id:37,word:'third wheel',meaning:'电灯泡',example:'I felt like a third wheel in my own home.',date:'2026-06-11',review:false},
+  {id:38,word:'counting down',meaning:'倒数',example:'I am counting down my gym sessions until I can move out.',date:'2026-06-11',review:false},
+  {id:39,word:'go into detail',meaning:'详细说明',example:'I did not go into detail, I just told her I was moving.',date:'2026-06-11',review:false},
+  {id:40,word:'just the two of us',meaning:'我们两个人',example:'I would rather live just the two of us than have a third wheel.',date:'2026-06-11',review:false},
+  {id:41,word:"I can't wait",meaning:'迫不及待',example:"I can't wait to move into my own place!",date:'2026-06-11',review:false},
+  {id:42,word:'walk around naked',meaning:'裸体走来走去',example:'Living alone means I can walk around naked in my own home!',date:'2026-06-11',review:false},
+  {id:43,word:'less is more',meaning:'少即是多',example:'I do not need many decorations — less is more!',date:'2026-06-11',review:false},
+  {id:44,word:'minimalist',meaning:'极简主义的',example:'My decoration style is minimalist — clean and simple.',date:'2026-06-11',review:false},
+  {id:45,word:'neutral tones',meaning:'中性色调',example:'I want my new home to have neutral tones like beige and grey.',date:'2026-06-11',review:false},
+  {id:46,word:'sofa bed',meaning:'沙发床',example:'I want to buy a small sofa bed — it saves space and doubles as a guest bed.',date:'2026-06-11',review:false},
+  {id:47,word:'converts into',meaning:'变成、转换成',example:'A sofa that converts into a bed is very practical for a small apartment.',date:'2026-06-11',review:false},
+  {id:48,word:'space-saving',meaning:'节省空间的',example:'A sofa bed is a space-saving choice for small apartments.',date:'2026-06-11',review:false},
+  {id:49,word:'built-in',meaning:'内置的、嵌入式的',example:'I have a desk with a built-in shelf for my piano.',date:'2026-06-11',review:false},
+  {id:50,word:'slide out',meaning:'滑出来',example:'I can slide the piano out from under the desk and play straight away.',date:'2026-06-11',review:false},
+  {id:51,word:'straight away',meaning:'立刻、马上',example:'Once I slide the piano out, I can play straight away.',date:'2026-06-11',review:false},
+  {id:52,word:'landlord',meaning:'房东',example:'I think the landlord will love the desk I leave behind!',date:'2026-06-11',review:false},
+  {id:53,word:'coach',meaning:'教练（不是沙发！）',example:'I told my coach I am moving at the end of the month.',date:'2026-06-11',review:false},
+  {id:54,word:'impolite / rude',meaning:'不礼貌的',example:'I did not say anything because I thought it would be rude.',date:'2026-06-11',review:false},
+  {id:55,word:'living space',meaning:'生活空间',example:'My living space has been reduced since the boyfriend moved in.',date:'2026-06-11',review:false},
+];
+
+function load(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    words = raw ? JSON.parse(raw) : DEFAULT;
+  }catch{words=[...DEFAULT]}
+  render();
+}
+
+function save(){
+  try{localStorage.setItem(STORAGE_KEY,JSON.stringify(words));}catch{}
+}
+
+function setTab(tab,el){
+  currentTab=tab;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  render();
+}
+
+function render(){
+  const q = document.getElementById('search').value.toLowerCase().trim();
+  let filtered = words.filter(w=>
+    w.word.toLowerCase().includes(q)||
+    w.meaning.toLowerCase().includes(q)||
+    (w.example||'').toLowerCase().includes(q)
+  );
+  if(currentTab==='recent'){
+    const today = new Date().toISOString().slice(0,10);
+    filtered = filtered.filter(w=>w.date===today);
+  } else if(currentTab==='review'){
+    filtered = filtered.filter(w=>w.review);
+  }
+
+  document.getElementById('word-count').textContent = words.length + ' words';
+
+  const list = document.getElementById('list');
+  if(!filtered.length){
+    list.innerHTML = `<div class="empty"><div class="empty-icon">${currentTab==='review'?'⭐':'🔍'}</div><div class="empty-text">${currentTab==='review'?'No words marked for review yet.<br>Long press a word to mark it!':'No words found.'}</div></div>`;
+    return;
+  }
+
+  list.innerHTML = filtered.map(w=>`
+    <div class="word-card" id="card-${w.id}" oncontextmenu="toggleReview(${w.id});return false;" ontouchstart="touchStart(${w.id})" ontouchend="touchEnd()">
+      <div class="card-top">
+        <span class="word">${w.word}${w.review?' ⭐':''}</span>
+        <button class="del-btn" onclick="deleteWord(${w.id})" aria-label="Delete">✕</button>
+      </div>
+      <div class="meaning">${w.meaning}</div>
+      ${w.example?`<div class="example">${w.example}</div>`:''}
+      <div class="date-tag">${w.date||''}</div>
+    </div>
+  `).join('');
+}
+
+let touchTimer;
+function touchStart(id){touchTimer=setTimeout(()=>toggleReview(id),600)}
+function touchEnd(){clearTimeout(touchTimer)}
+
+function toggleReview(id){
+  const w=words.find(x=>x.id===id);
+  if(w){w.review=!w.review;save();render();}
+}
+
+function toggleForm(open){
+  const form = document.getElementById('add-form');
+  const fab = document.getElementById('fab');
+  if(open){
+    form.classList.add('open');
+    fab.style.display='none';
+    document.getElementById('f-word').focus();
+  } else {
+    form.classList.remove('open');
+    fab.style.display='flex';
+    document.getElementById('f-word').value='';
+    document.getElementById('f-meaning').value='';
+    document.getElementById('f-example').value='';
+  }
+}
+
+function addWord(){
+  const word = document.getElementById('f-word').value.trim();
+  const meaning = document.getElementById('f-meaning').value.trim();
+  const example = document.getElementById('f-example').value.trim();
+  if(!word||!meaning)return;
+  const today = new Date().toISOString().slice(0,10);
+  words.unshift({id:Date.now(),word,meaning,example,date:today,review:false});
+  save();
+  toggleForm(false);
+  setTab('all',document.querySelector('.tab'));
+  render();
+}
+
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./sw.js').catch(()=>{});
+}
+
+load();
+</script>
+</body>
+</html>
